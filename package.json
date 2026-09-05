@@ -1,0 +1,21 @@
+{
+  "name": "javascript2",
+  "version": "1.0.0",
+  "main": "ex001.js",
+  "type": "module",
+  "scripts": {
+    "chat": "node chat.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14",
+    "openai": "^7.4.0"
+  }
+}

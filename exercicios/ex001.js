@@ -1,0 +1,5 @@
+// MOSTRAR INFORMAÇÕES NO TERMINAL (CONSOLE)
+console.log("Olá, mundo!")
+console.log("Meu nome é Jefferson!!")
+console.info("Meu nome é Jefferson!!")
+console.table(["apples", "oranges", "bananas"] )

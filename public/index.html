@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Assistente da Academia</title>
+
+    <!-- Biblioteca para interpretar Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --fundo: #111827;
+            --fundo-chat: #0f172a;
+            --painel: #1f2937;
+            --painel-secundario: #374151;
+            --texto: #f9fafb;
+            --texto-secundario: #9ca3af;
+            --borda: #374151;
+            --principal: #dc2626;
+            --principal-hover: #b91c1c;
+            --mensagem-ia: #1f2937;
+            --mensagem-usuario: #dc2626;
+            --input: #111827;
+        }
+
+        body.light {
+            --fundo: #f3f4f6;
+            --fundo-chat: #f8fafc;
+            --painel: #ffffff;
+            --painel-secundario: #e5e7eb;
+            --texto: #111827;
+            --texto-secundario: #6b7280;
+            --borda: #e5e7eb;
+            --mensagem-ia: #ffffff;
+            --input: #ffffff;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--fundo);
+            color: var(--texto);
+            min-height: 100vh;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transition: background 0.25s, color 0.25s;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 950px;
+            height: 94vh;
+
+            background: var(--painel);
+
+            border-radius: 20px;
+
+            display: flex;
+            flex-direction: column;
+
+            overflow: hidden;
+
+            border: 1px solid var(--borda);
+
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        /* CABEÇALHO */
+
+        .cabecalho {
+            min-height: 82px;
+
+            padding: 0 22px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 14px;
+
+            background: var(--painel);
+
+            border-bottom: 1px solid var(--borda);
+        }
+
+        .icone-chat {
+            width: 48px;
+            height: 48px;
+
+            border-radius: 14px;
+
+            background: var(--principal);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 25px;
+
+            flex-shrink: 0;
+        }
+
+        .informacoes {
+            flex: 1;
+        }
+
+        .informacoes h1 {
+            font-size: 19px;
+            margin-bottom: 4px;
+        }
+
+        .informacoes span {
+            color: var(--texto-secundario);
+            font-size: 13px;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 8px;
+        }
+
+        .botao-icone,
+        #limparConversa {
+            height: 40px;
+
+            border: 1px solid var(--borda);
+
+            border-radius: 10px;
+
+            background: var(--painel);
+
+            color: var(--texto);
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .botao-icone {
+            width: 40px;
+            font-size: 18px;
+        }
+
+        #limparConversa {
+            padding: 0 13px;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .botao-icone:hover,
+        #limparConversa:hover {
+            background: var(--painel-secundario);
+        }
+
+        /* INFORMAÇÕES */
+
+        .barra-info {
+            min-height: 36px;
+
+            padding: 0 22px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            background: var(--painel);
+
+            border-bottom: 1px solid var(--borda);
+
+            color: var(--texto-secundario);
+
+            font-size: 12px;
+        }
+
+        /* CHAT */
+
+        #chat {
+            flex: 1;
+
+            padding: 25px;
+
+            overflow-y: auto;
+
+            background: var(--fundo-chat);
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 18px;
+
+            scroll-behavior: smooth;
+        }
+
+        #chat::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        #chat::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #chat::-webkit-scrollbar-thumb {
+            background: var(--painel-secundario);
+            border-radius: 10px;
+        }
+
+        /* MENSAGENS */
+
+        .grupo-mensagem {
+            display: flex;
+            flex-direction: column;
+
+            max-width: 78%;
+        }
+
+        .grupo-mensagem.usuario {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .grupo-mensagem.ia {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .cabecalho-mensagem {
+            display: flex;
+            align-items: center;
+
+            gap: 8px;
+
+            margin-bottom: 5px;
+
+            font-size: 11px;
+
+            color: var(--texto-secundario);
+        }
+
+        .bolinha {
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: var(--principal);
+        }
+
+        .conteudo-mensagem {
+            position: relative;
+
+            padding: 13px 16px;
+
+            border-radius: 16px;
+
+            font-size: 15px;
+
+            line-height: 1.6;
+
+            word-wrap: break-word;
+
+            white-space: normal;
+        }
+
+        .usuario .conteudo-mensagem {
+            background: var(--mensagem-usuario);
+
+            color: white;
+
+            border-bottom-right-radius: 4px;
+        }
+
+        .ia .conteudo-mensagem {
+            background: var(--mensagem-ia);
+
+            color: var(--texto);
+
+            border: 1px solid var(--borda);
+
+            border-bottom-left-radius: 4px;
+        }
+
+        /* MARKDOWN */
+
+        .conteudo-mensagem p {
+            margin-bottom: 8px;
+        }
+
+        .conteudo-mensagem p:last-child {
+            margin-bottom: 0;
+        }
+
+        .conteudo-mensagem ul,
+        .conteudo-mensagem ol {
+            margin: 8px 0 8px 20px;
+        }
+
+        .conteudo-mensagem li {
+            margin-bottom: 4px;
+        }
+
+        .conteudo-mensagem strong {
+            font-weight: 700;
+        }
+
+        .conteudo-mensagem h1,
+        .conteudo-mensagem h2,
+        .conteudo-mensagem h3 {
+            margin: 8px 0;
+        }
+
+        .conteudo-mensagem code {
+            background: rgba(127, 127, 127, 0.2);
+            padding: 2px 5px;
+            border-radius: 5px;
+        }
+
+        /* BOTÃO COPIAR */
+
+        .acoes-mensagem {
+            display: flex;
+            justify-content: flex-end;
+
+            margin-top: 7px;
+        }
+
+        .copiar {
+            border: none;
+
+            background: transparent;
+
+            color: var(--texto-secundario);
+
+            cursor: pointer;
+
+            font-size: 11px;
+
+            padding: 3px 5px;
+        }
+
+        .copiar:hover {
+            color: var(--texto);
+        }
+
+        /* LOADING */
+
+        .carregando {
+            align-self: flex-start;
+
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 12px 16px;
+
+            border-radius: 16px;
+
+            border-bottom-left-radius: 4px;
+
+            background: var(--mensagem-ia);
+
+            border: 1px solid var(--borda);
+
+            color: var(--texto-secundario);
+
+            font-size: 14px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+
+            border: 3px solid var(--painel-secundario);
+
+            border-top-color: var(--principal);
+
+            border-radius: 50%;
+
+            animation: girar 0.8s linear infinite;
+        }
+
+        @keyframes girar {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ERRO */
+
+        .erro {
+            align-self: center;
+
+            max-width: 90%;
+
+            padding: 12px 16px;
+
+            border-radius: 12px;
+
+            background: #450a0a;
+
+            color: #fecaca;
+
+            border: 1px solid #7f1d1d;
+
+            font-size: 14px;
+        }
+
+        /* BOAS-VINDAS */
+
+        .boas-vindas {
+            margin: auto;
+
+            max-width: 500px;
+
+            text-align: center;
+
+            color: var(--texto-secundario);
+        }
+
+        .boas-vindas .emoji {
+            font-size: 52px;
+
+            margin-bottom: 15px;
+        }
+
+        .boas-vindas h2 {
+            color: var(--texto);
+
+            font-size: 22px;
+
+            margin-bottom: 8px;
+        }
+
+        .boas-vindas p {
+            font-size: 14px;
+
+            line-height: 1.6;
+        }
+
+        /* ENTRADA */
+
+        .entrada {
+            padding: 17px 20px 10px;
+
+            background: var(--painel);
+
+            border-top: 1px solid var(--borda);
+
+            display: flex;
+
+            gap: 10px;
+        }
+
+        #mensagem {
+            flex: 1;
+
+            height: 48px;
+
+            padding: 0 17px;
+
+            border: 1px solid var(--borda);
+
+            border-radius: 12px;
+
+            outline: none;
+
+            font-size: 15px;
+
+            background: var(--input);
+
+            color: var(--texto);
+
+            transition: 0.2s;
+        }
+
+        #mensagem::placeholder {
+            color: var(--texto-secundario);
+        }
+
+        #mensagem:focus {
+            border-color: var(--principal);
+
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+        }
+
+        #enviar {
+            height: 48px;
+
+            padding: 0 22px;
+
+            border: none;
+
+            border-radius: 12px;
+
+            background: var(--principal);
+
+            color: white;
+
+            cursor: pointer;
+
+            font-size: 15px;
+
+            font-weight: 600;
+
+            transition: 0.2s;
+        }
+
+        #enviar:hover {
+            background: var(--principal-hover);
+        }
+
+        #enviar:disabled {
+            background: #6b7280;
+
+            cursor: not-allowed;
+        }
+
+        .atalho {
+            padding: 0 22px 10px;
+
+            background: var(--painel);
+
+            color: var(--texto-secundario);
+
+            font-size: 11px;
+        }
+
+        /* RESPONSIVIDADE */
+
+        @media (max-width: 700px) {
+
+            body {
+                background: var(--fundo-chat);
+            }
+
+            .container {
+                height: 100vh;
+
+                border-radius: 0;
+
+                border: none;
+
+                box-shadow: none;
+            }
+
+            .cabecalho {
+                padding: 0 14px;
+            }
+
+            .informacoes h1 {
+                font-size: 16px;
+            }
+
+            .informacoes span {
+                font-size: 11px;
+            }
+
+            #limparConversa {
+                padding: 0 9px;
+            }
+
+            #chat {
+                padding: 18px;
+            }
+
+            .grupo-mensagem {
+                max-width: 88%;
+            }
+
+            .entrada {
+                padding: 12px;
+            }
+
+            .atalho {
+                padding: 0 12px 9px;
+            }
+
+            #enviar {
+                padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header class="cabecalho">
+
+            <div class="icone-chat">🏋️</div>
+
+            <div class="informacoes">
+                <h1>Assistente da Academia</h1>
+                <span>Seu assistente virtual de treinamento</span>
+            </div>
+
+            <div class="acoes">
+
+                <button
+                    class="botao-icone"
+                    id="alternarTema"
+                    title="Alternar tema"
+                >
+                    🌙
+                </button>
+
+                <button id="limparConversa">
+                    🔄 Nova Conversa
+                </button>
+
+            </div>
+
+        </header>
+
+        <div class="barra-info">
+
+            <span>💪 Academia</span>
+
+            <span id="contador">
+                0 mensagens
+            </span>
+
+        </div>
+
+        <main id="chat">
+
+            <div class="boas-vindas">
+
+                <div class="emoji">
+                    🏋️
+                </div>
+
+                <h2>
+                    Olá! Sou seu assistente.
+                </h2>
+
+                <p>
+                    Posso ajudar com exercícios, musculação,
+                    treinos, equipamentos e assuntos relacionados
+                    à academia.
+                </p>
+
+            </div>
+
+        </main>
+
+        <div class="entrada">
+
+            <input
+                type="text"
+                id="mensagem"
+                placeholder="Digite sua mensagem..."
+                autocomplete="off"
+            >
+
+            <button id="enviar">
+                Enviar
+            </button>
+
+        </div>
+
+        <div class="atalho">
+            Pressione Enter para enviar sua mensagem.
+        </div>
+
+    </div>
+
+    <script>
+
+        const input = document.getElementById("mensagem");
+        const botao = document.getElementById("enviar");
+        const botaoTema = document.getElementById("alternarTema");
+        const botaoLimpar = document.getElementById("limparConversa");
+        const chat = document.getElementById("chat");
+        const contador = document.getElementById("contador");
+
+        /*
+         * HISTÓRICO
+         *
+         * O histórico é mantido em memória e também
+         * armazenado no LocalStorage.
+         */
+
+        let messages = [];
+
+        /* ==============================
+           LOCAL STORAGE
+        ============================== */
+
+        function salvarHistorico() {
+
+            localStorage.setItem(
+                "academia_messages",
+                JSON.stringify(messages)
+            );
+
+        }
+
+        function carregarHistorico() {
+
+            const historicoSalvo =
+                localStorage.getItem("academia_messages");
+
+            if (!historicoSalvo) {
+                return;
+            }
+
+            try {
+
+                messages = JSON.parse(historicoSalvo);
+
+                messages.forEach(mensagem => {
+
+                    if (
+                        mensagem.role === "user" ||
+                        mensagem.role === "assistant"
+                    ) {
+
+                        adicionarMensagem(
+                            mensagem.role === "user"
+                                ? "Você"
+                                : "IA",
+
+                            mensagem.content,
+
+                            mensagem.role === "user"
+                                ? "usuario"
+                                : "ia",
+
+                            mensagem.time
+                        );
+
+                    }
+
+                });
+
+                atualizarContador();
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao carregar histórico:",
+                    erro
+                );
+
+                messages = [];
+
+            }
+
+        }
+
+        /* ==============================
+           TEMA
+        ============================== */
+
+        function carregarTema() {
+
+            const tema =
+                localStorage.getItem("academia_tema");
+
+            if (tema === "light") {
+
+                document.body.classList.add("light");
+
+                botaoTema.textContent = "☀️";
+
+            } else {
+
+                document.body.classList.remove("light");
+
+                botaoTema.textContent = "🌙";
+
+            }
+
+        }
+
+        function alternarTema() {
+
+            document.body.classList.toggle("light");
+
+            const modoClaro =
+                document.body.classList.contains("light");
+
+            localStorage.setItem(
+                "academia_tema",
+                modoClaro ? "light" : "dark"
+            );
+
+            botaoTema.textContent =
+                modoClaro ? "☀️" : "🌙";
+
+        }
+
+        /* ==============================
+           HORÁRIO
+        ============================== */
+
+        function obterHorario() {
+
+            const agora = new Date();
+
+            return agora.toLocaleTimeString(
+                "pt-BR",
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+
+        }
+
+        /* ==============================
+           CONTADOR
+        ============================== */
+
+        function atualizarContador() {
+
+            const quantidade = messages.length;
+
+            contador.textContent =
+                `${quantidade} ${
+                    quantidade === 1
+                        ? "mensagem"
+                        : "mensagens"
+                }`;
+
+        }
+
+        /* ==============================
+           ADICIONAR MENSAGEM
+        ============================== */
+
+        function adicionarMensagem(
+            remetente,
+            texto,
+            classe,
+            horario = null
+        ) {
+
+            const boasVindas =
+                document.querySelector(".boas-vindas");
+
+            if (boasVindas) {
+                boasVindas.remove();
+            }
+
+            const grupo =
+                document.createElement("div");
+
+            grupo.classList.add(
+                "grupo-mensagem",
+                classe
+            );
+
+            const cabecalho =
+                document.createElement("div");
+
+            cabecalho.classList.add(
+                "cabecalho-mensagem"
+            );
+
+            const bolinha =
+                document.createElement("div");
+
+            bolinha.classList.add("bolinha");
+
+            const nome =
+                document.createElement("span");
+
+            nome.textContent = remetente;
+
+            const hora =
+                document.createElement("span");
+
+            hora.textContent =
+                horario || obterHorario();
+
+            cabecalho.appendChild(bolinha);
+            cabecalho.appendChild(nome);
+            cabecalho.appendChild(hora);
+
+            const conteudo =
+                document.createElement("div");
+
+            conteudo.classList.add(
+                "conteudo-mensagem"
+            );
+
+            /*
+             * Markdown apenas nas respostas da IA.
+             *
+             * Mensagens do usuário continuam sendo
+             * texto normal para evitar interpretação
+             * de HTML/Markdown enviado pelo usuário.
+             */
+
+            if (classe === "ia") {
+
+                conteudo.innerHTML =
+                    marked.parse(texto);
+
+            } else {
+
+                conteudo.textContent = texto;
+
+            }
+
+            grupo.appendChild(cabecalho);
+            grupo.appendChild(conteudo);
+
+            /* Botão copiar somente para IA */
+
+            if (classe === "ia") {
+
+                const acoes =
+                    document.createElement("div");
+
+                acoes.classList.add(
+                    "acoes-mensagem"
+                );
+
+                const copiar =
+                    document.createElement("button");
+
+                copiar.classList.add("copiar");
+
+                copiar.textContent = "📋 Copiar";
+
+                copiar.addEventListener(
+                    "click",
+                    async () => {
+
+                        try {
+
+                            await navigator.clipboard.writeText(
+                                texto
+                            );
+
+                            copiar.textContent =
+                                "✅ Copiado!";
+
+                            setTimeout(() => {
+
+                                copiar.textContent =
+                                    "📋 Copiar";
+
+                            }, 1500);
+
+                        } catch (erro) {
+
+                            console.error(
+                                "Erro ao copiar:",
+                                erro
+                            );
+
+                        }
+
+                    }
+                );
+
+                acoes.appendChild(copiar);
+
+                grupo.appendChild(acoes);
+            }
+
+            chat.appendChild(grupo);
+
+            /* Scroll automático */
+
+            chat.scrollTop =
+                chat.scrollHeight;
+
+        }
+
+        /* ==============================
+           CARREGAMENTO
+        ============================== */
+
+        function adicionarCarregamento() {
+
+            const div =
+                document.createElement("div");
+
+            div.classList.add(
+                "carregando"
+            );
+
+            div.innerHTML = `
+                <div class="spinner"></div>
+                <span>Pensando...</span>
+            `;
+
+            chat.appendChild(div);
+
+            chat.scrollTop =
+                chat.scrollHeight;
+
+            return div;
+
+        }
+
+        /* ==============================
+           ENVIAR MENSAGEM
+        ============================== */
+
+        async function enviarMensagem() {
+
+            const mensagem =
+                input.value.trim();
+
+            if (!mensagem) {
+                return;
+            }
+
+            /*
+             * Adiciona usuário ao histórico
+             */
+
+            const horario =
+                obterHorario();
+
+            messages.push({
+
+                role: "user",
+
+                content: mensagem,
+
+                time: horario
+
+            });
+
+            salvarHistorico();
+
+            adicionarMensagem(
+                "Você",
+                mensagem,
+                "usuario",
+                horario
+            );
+
+            atualizarContador();
+
+            input.value = "";
+
+            botao.disabled = true;
+            input.disabled = true;
+
+            const carregando =
+                adicionarCarregamento();
+
+            try {
+
+                const resposta =
+                    await fetch(
+                        "http://localhost:3000/chat",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+
+                                message: mensagem,
+
+                                history: messages
+
+                            })
+
+                        }
+                    );
+
+                if (!resposta.ok) {
+
+                    throw new Error(
+                        `Erro HTTP: ${resposta.status}`
+                    );
+
+                }
+
+                const dados =
+                    await resposta.json();
+
+                carregando.remove();
+
+                const respostaIA =
+                    dados.retornoChat;
+
+                const horarioIA =
+                    obterHorario();
+
+                /*
+                 * Adiciona resposta da IA
+                 */
+
+                messages.push({
+
+                    role: "assistant",
+
+                    content: respostaIA,
+
+                    time: horarioIA
+
+                });
+
+                salvarHistorico();
+
+                adicionarMensagem(
+                    "IA",
+                    respostaIA,
+                    "ia",
+                    horarioIA
+                );
+
+                atualizarContador();
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro:",
+                    erro
+                );
+
+                carregando.remove();
+
+                adicionarMensagem(
+                    "Erro",
+                    "Não foi possível conectar com a API. Verifique se o servidor está funcionando e tente novamente.",
+                    "erro"
+                );
+
+                /*
+                 * Remove a mensagem do usuário
+                 * que não recebeu resposta.
+                 */
+
+                messages.pop();
+
+                salvarHistorico();
+
+                atualizarContador();
+
+            } finally {
+
+                botao.disabled = false;
+
+                input.disabled = false;
+
+                input.focus();
+
+            }
+
+        }
+
+        /* ==============================
+           LIMPAR CONVERSA
+        ============================== */
+
+        function limparConversa() {
+
+            const confirmar =
+                confirm(
+                    "Tem certeza que deseja iniciar uma nova conversa?"
+                );
+
+            if (!confirmar) {
+                return;
+            }
+
+            messages = [];
+
+            localStorage.removeItem(
+                "academia_messages"
+            );
+
+            chat.innerHTML = `
+                <div class="boas-vindas">
+
+                    <div class="emoji">
+                        🏋️
+                    </div>
+
+                    <h2>
+                        Nova conversa!
+                    </h2>
+
+                    <p>
+                        Como posso ajudar você
+                        com seus treinos hoje?
+                    </p>
+
+                </div>
+            `;
+
+            atualizarContador();
+
+            input.value = "";
+
+            input.focus();
+
+        }
+
+        /* ==============================
+           EVENTOS
+        ============================== */
+
+        botao.addEventListener(
+            "click",
+            enviarMensagem
+        );
+
+        botaoLimpar.addEventListener(
+            "click",
+            limparConversa
+        );
+
+        botaoTema.addEventListener(
+            "click",
+            alternarTema
+        );
+
+        /*
+         * Enter envia a mensagem.
+         */
+
+        input.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    enviarMensagem();
+
+                }
+
+            }
+        );
+
+        /* ==============================
+           INICIALIZAÇÃO
+        ============================== */
+
+        carregarTema();
+
+        carregarHistorico();
+
+        atualizarContador();
+
+        input.focus();
+
+    </script>
+
+</body>
+
+</html>

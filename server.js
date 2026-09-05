@@ -245,14 +245,22 @@ app.post("/chat", async (req, res) => {
          * }
          */
 
-        const historicoOpenAI =
-            historico.map((mensagem) => ({
-
-                role: mensagem.role,
-
-                content: mensagem.content
-
-            }));
+        const historicoOpenAI = historico
+        .slice(-10)
+        .map((mensagem) => ({
+            role: mensagem.role,
+            content: mensagem.content
+        }));
+    
+    if (
+        historicoOpenAI.length === 0 ||
+        historicoOpenAI[historicoOpenAI.length - 1].content !== mensagemUsuario
+    ) {
+        historicoOpenAI.push({
+            role: "user",
+            content: mensagemUsuario
+        });
+    }
 
 
         /*

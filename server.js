@@ -99,7 +99,7 @@ Seja:
 
 - acolhedor;
 - simpático;
-- didático;
+- didático;.
 - objetivo;
 - motivador;
 - paciente com iniciantes.
